@@ -66,6 +66,13 @@ class DParticleCombo
 		UInt_t Get_NDF_KinFit(void) const;
 		Float_t Get_ConfidenceLevel_KinFit(void) const;
 
+		// EVENT INFO: //Doesn't really belong in DParticleCombo, but much easier to pass into actions this way
+		UInt_t Get_RunNumber(void) const;
+		ULong64_t Get_EventNumber(void) const;
+		UInt_t Get_L1TriggerBits(void) const;
+		Bool_t Get_IsThrownTopology(void) const;
+		Float_t Get_MCWeight(void) const;
+
 		//GET CUSTOM DATA
 		template <typename DType> DType Get_Fundamental(string locBranchName) const;
 		template <typename DType> DType Get_TObject(string locBranchName) const;
@@ -76,6 +83,10 @@ class DParticleCombo
 		string Get_DecayChainFinalParticlesROOTNames(Particle_t locInitialPID, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs, bool locKinFitResultsFlag) const;
 		string Get_DecayChainFinalParticlesROOTNames(size_t locStepIndex, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs, bool locKinFitResultsFlag, bool locExpandDecayingParticlesFlag) const;
 
+		string Get_KinFitConstraints(void) const{return dKinFitConstraints;}
+		size_t Get_NumKinFitConstraints(void) const{return dNumKinFitConstraints;}
+		size_t Get_NumKinFitUnknowns(void) const{return dNumKinFitUnknowns;}
+
 	private:
 		DParticleCombo(void){}; //no default constructor!
 
@@ -84,6 +95,8 @@ class DParticleCombo
 		int Get_DecayStepIndex(int locStepIndex, int locParticleIndex) const;
 		pair<int, int> Get_DecayFromIndices(int locStepIndex) const;
 		void Setup_X4Branches(void);
+		void Setup_EventBranches(void);
+		void Setup_KinFitConstraintInfo(void);
 
 		//RE-INITIALIZE (e.g. with the next TTree in a chain)
 		void ReInitialize(DTreeInterface* locTreeInterface);
@@ -111,6 +124,18 @@ class DParticleCombo
 		//Target not necessarily in the particle combo, so add the info here (for convenience)
 		Particle_t dTargetPID;
 		TVector3 dTargetCenter;
+
+		//Kinfit constraint info
+		string dKinFitConstraints;
+		size_t dNumKinFitConstraints;
+		size_t dNumKinFitUnknowns;
+
+		// EVENT DATA
+		UInt_t* dRunNumber;
+		ULong64_t* dEventNumber;
+		UInt_t* dL1TriggerBits;
+		Float_t* dMCWeight; //only present if simulated data
+		Bool_t* dIsThrownTopology; //only present if simulated data
 };
 
 inline void DParticleCombo::Print_Reaction(void) const
@@ -218,8 +243,8 @@ inline Float_t DParticleCombo::Get_ChiSq_KinFit(void) const
 
 inline UInt_t DParticleCombo::Get_NDF_KinFit(void) const
 {
-	if(dBranch_NDF_KinFit == NULL)
-		return 0;
+	if((dBranch_NDF_KinFit == NULL) || (dKinFitConstraints != "NA"))
+		return dNumKinFitConstraints - dNumKinFitUnknowns;
 	return ((UInt_t*)dBranch_NDF_KinFit->GetAddress())[dComboIndex];
 }
 
@@ -250,6 +275,32 @@ inline DParticleComboStep* DParticleCombo::Get_MissingParticleStep(void) const
 			return dParticleComboSteps[loc_i];
 	}
 	return NULL;
+}
+
+// EVENT DATA
+inline UInt_t DParticleCombo::Get_RunNumber(void) const
+{
+	return *dRunNumber;
+}
+
+inline ULong64_t DParticleCombo::Get_EventNumber(void) const
+{
+	return *dEventNumber;
+}
+
+inline UInt_t DParticleCombo::Get_L1TriggerBits(void) const
+{
+	return *dL1TriggerBits;
+}
+
+inline Bool_t DParticleCombo::Get_IsThrownTopology(void) const
+{
+	return ((dIsThrownTopology != NULL) ? *dIsThrownTopology : false);
+}
+
+inline Float_t DParticleCombo::Get_MCWeight(void) const
+{
+	return ((dMCWeight != NULL) ? *dMCWeight : 0.0);
 }
 
 //GET CUSTOM DATA

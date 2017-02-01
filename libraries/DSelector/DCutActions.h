@@ -62,13 +62,14 @@ class DCutAction_NoPIDHit : public DAnalysisAction
 		DetectorSystem_t dSystem;
 };
 
-class DCutAction_dEdxProton : public DAnalysisAction
+class DCutAction_dEdx : public DAnalysisAction
 {
 	public:
-                DCutAction_dEdxProton(const DParticleCombo* locParticleComboWrapper, bool locUseKinFitFlag = false, Particle_t locPID = Unknown, TF1* locFunct = NULL, DetectorSystem_t locSystem = SYS_NULL, string locActionUniqueString = "") :
-			DAnalysisAction(locParticleComboWrapper, "Cut_dEdxProton", locUseKinFitFlag, locActionUniqueString),
-			dPID(locPID), dSystem(locSystem), dFunct(locFunct) {}
+		DCutAction_dEdx(const DParticleCombo* locParticleComboWrapper, bool locUseKinFitFlag, Particle_t locPID, DetectorSystem_t locSystem = SYS_CDC, string locActionUniqueString = "") :
+			DAnalysisAction(locParticleComboWrapper, "Cut_dEdx", locUseKinFitFlag, locActionUniqueString),
+			dPID(locPID), dSystem(locSystem), dFunc_dEdxCut_SelectHeavy(NULL), dFunc_dEdxCut_SelectLight(NULL), dMaxRejectionFlag(false) {}
 
+		string Get_ActionName(void) const;
 		void Initialize(void);
 		void Reset_NewEvent(void){}
 		bool Perform_Action(void);
@@ -77,7 +78,9 @@ class DCutAction_dEdxProton : public DAnalysisAction
 
 		Particle_t dPID;
 		DetectorSystem_t dSystem;
-		TF1 *dFunct;
+		TF1 *dFunc_dEdxCut_SelectHeavy;
+		TF1 *dFunc_dEdxCut_SelectLight;
+		bool dMaxRejectionFlag;
 };
 
 class DCutAction_KinFitFOM : public DAnalysisAction
@@ -314,6 +317,37 @@ class DCutAction_TrackShowerEOverP : public DAnalysisAction
 		DetectorSystem_t dDetector;
 		Particle_t dPID;
 		double dShowerEOverPCut;
+};
+
+class DCutAction_Kinematics : public DAnalysisAction
+{
+	//input range is what is cut: cut is ignored if min > max
+	//if step index == -1: all steps
+	//if PID == Unknown: all particles
+	//particle must be detected
+	//angles in degrees
+	public:
+		DCutAction_Kinematics(const DParticleCombo* locParticleComboWrapper, int locStepIndex, Particle_t locPID, bool locUseKinFitFlag,
+			double locCutMinP, double locCutMaxP, double locCutMinTheta = 1.0, double locCutMaxTheta = 0.0, double locCutMinPhi = 1.0, double locCutMaxPhi = 0.0) :
+			DAnalysisAction(locParticleComboWrapper, "Cut_Kinematics", locUseKinFitFlag, ""),
+			dStepIndex(locStepIndex), dPID(locPID), dCutMinP(locCutMinP), dCutMaxP(locCutMaxP), dCutMinTheta(locCutMinTheta),
+			dCutMaxTheta(locCutMaxTheta), dCutMinPhi(locCutMinPhi), dCutMaxPhi(locCutMaxPhi) {}
+
+		string Get_ActionName(void) const;
+		void Initialize(void){};
+		void Reset_NewEvent(void){}
+		bool Perform_Action(void);
+
+	private:
+
+		int dStepIndex;
+		Particle_t dPID;
+		double dCutMinP;
+		double dCutMaxP;
+		double dCutMinTheta;
+		double dCutMaxTheta;
+		double dCutMinPhi;
+		double dCutMaxPhi;
 };
 
 #endif // _DCutActions_
